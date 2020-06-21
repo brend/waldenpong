@@ -235,6 +235,26 @@ FlipBallYIfTopWall:
   STA ballY
 AfterFlipBallYIfTopWall:
   
+FlipBallXIfLeftPaddle:
+  LDA $021B
+  CMP #$18        ; compare ball x with left paddle x + paddle width
+  BCS AfterFlipBallXIfLeftPaddle
+  LDA #$01
+  CLC
+  SBC ballX
+  STA ballX
+AfterFlipBallXIfLeftPaddle:
+FlipBallXIfRightPaddle:
+  LDA $021B
+  CMP #$E0        ; compare ball x with right paddle x
+  ; if x < y then (BCC) else (BCS)
+  BCC AfterFlipBallXIfRightPaddle  
+  LDA #$01
+  CLC
+  SBC ballX
+  STA ballX
+AfterFlipBallXIfRightPaddle:
+  
   RTI             ; return from interrupt
   
 ;;;;;;;;;;;;;;
