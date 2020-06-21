@@ -11,9 +11,7 @@
 buttons1  .rs 1
 buttons2  .rs 1
 ballX     .rs 1
-ballXneg  .rs 1
 ballY     .rs 1
-ballYneg  .rs 1
 
 ;;;;;;;;;;;;;;;
 
@@ -93,10 +91,8 @@ LoadSpritesLoop:
   STA $2001
   
 InitObjects:
-  LDA #$02
-  STA ballY       ; initialize vertical ball velocity with 1
-  LDA #$01
-  STA ballXneg
+  LDA #$FC
+  STA ballY
   LDA #$01
   STA ballX
 
@@ -208,55 +204,35 @@ HandleDownDone2:
   
 MoveBall:  
   ; $0218 is base address of ball sprite
-  
-  
 MoveBallY:
-  LDA ballYneg
-  CMP #$01
-  BEQ MoveBallNegY
-  
   LDA $0218       ; load ball Y position
   CLC
   ADC ballY       ; add ball Y velocity
   STA $0218
-  JMP MoveBallYDone
-MoveBallNegY:
-  LDA $0218
-  SEC
-  SBC ballY
-  STA $0218
-MoveBallYDone:
   
 MoveBallX:
-  LDA ballXneg
-  CMP #$01
-  BEQ MoveBallNegX
-  
   LDA $021B       ; load ball X position
   CLC
   ADC ballX       ; add ball X velocity
   STA $021B
-  JMP MoveBallXDone
-MoveBallNegX:
-  LDA $021B
-  SEC
-  SBC ballX
-  STA $021B
-MoveBallXDone:
   
 FlipBallYIfBottomWall:
   LDA $0218       ; compare y position of ball with constant 230 and flip y velocity if greater or equal
   CMP #$E6
   BCC AfterFlipBallYIfBottomWall
   LDA #$01
-  STA ballYneg
+  CLC
+  SBC ballY
+  STA ballY
 AfterFlipBallYIfBottomWall:
 FlipBallYIfTopWall:
   LDA $0218
-  CMP #$02
+  CMP #$07
   BCS AfterFlipBallYIfTopWall
-  LDA #$00
-  STA ballYneg
+  LDA #$01
+  CLC
+  SBC ballY
+  STA ballY
 AfterFlipBallYIfTopWall:
   
   RTI             ; return from interrupt
