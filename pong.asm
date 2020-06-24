@@ -10,8 +10,14 @@
   
 buttons1  .rs 1
 buttons2  .rs 1
-ballX     .rs 1
-ballY     .rs 1
+vx        .rs 1
+vy        .rs 1
+hit_lo      .rs 1
+hit_hi      .rs 1
+ball_center .rs 1
+paddle_center .rs 1
+ball_bottom .rs 1
+paddle_bottom .rs 1
 
 ;;;;;;;;;;;;;;;
 
@@ -91,10 +97,10 @@ LoadSpritesLoop:
   STA $2001
   
 InitObjects:
-  LDA #$FC
-  STA ballY
+  LDA #$00
+  STA vy
   LDA #$01
-  STA ballX
+  STA vx
 
 Forever:
   JMP Forever     ;jump back to Forever, infinite loop
@@ -207,13 +213,13 @@ MoveBall:
 MoveBallY:
   LDA $0218       ; load ball Y position
   CLC
-  ADC ballY       ; add ball Y velocity
+  ADC vy          ; add ball Y velocity
   STA $0218
   
 MoveBallX:
   LDA $021B       ; load ball X position
   CLC
-  ADC ballX       ; add ball X velocity
+  ADC vx          ; add ball X velocity
   STA $021B
   
 FlipBallYIfBottomWall:
@@ -222,37 +228,95 @@ FlipBallYIfBottomWall:
   BCC AfterFlipBallYIfBottomWall
   LDA #$01
   CLC
-  SBC ballY
-  STA ballY
+  SBC vy
+  STA vy
 AfterFlipBallYIfBottomWall:
+  
 FlipBallYIfTopWall:
   LDA $0218
   CMP #$07
   BCS AfterFlipBallYIfTopWall
   LDA #$01
   CLC
-  SBC ballY
-  STA ballY
+  SBC vy
+  STA vy
 AfterFlipBallYIfTopWall:
   
 FlipBallXIfLeftPaddle:
   LDA $021B
   CMP #$18        ; compare ball x with left paddle x + paddle width
-  BCS AfterFlipBallXIfLeftPaddle
+  BCC CheckIfPaddleHit
+  JMP DoNotFlipLeftX
+CheckIfPaddleHit:
+  
+  LDA $0218
+  CLC
+  ADC #$08
+  STA ball_bottom
+  
+  LDA ball_bottom     ; compare ball_bottom with paddle_top
+  CMP $0200
+  BCC DoNotFlipLeftX
+  
+  LDA $0200
+  CLC
+  ADC #$18
+  STA paddle_bottom
+  
+  LDA $0218           ; compare ball_top with paddle_bottom
+  CMP paddle_bottom
+  BCS DoNotFlipLeftX
+  
+  LDA $0218
+  CLC
+  ADC #$08
+  STA ball_center
+  
+  LDA $0200
+  CLC
+  ADC #$0C
+  STA paddle_center
+  
+  LDA ball_center     ; hit := ball_center - paddle_center
+  SEC
+  SBC paddle_center
+  STA hit_lo
+  LDA #$00
+  SBC #$00
+  STA hit_hi
+  
+  LDA #$00
+  STA vy
+  
   LDA #$01
   CLC
-  SBC ballX
-  STA ballX
-AfterFlipBallXIfLeftPaddle:
+  SBC vx
+  STA vx
+
+DoNotFlipLeftX:
+  
 FlipBallXIfRightPaddle:
   LDA $021B
   CMP #$E0        ; compare ball x with right paddle x
   ; if x < y then (BCC) else (BCS)
   BCC AfterFlipBallXIfRightPaddle  
-  LDA #$01
+  
+  LDA $0218
+  SEC
+  SBC $020C
+  BCC AfterFlipBallXIfRightPaddle
+  
+  LDA $020C
   CLC
-  SBC ballX
-  STA ballX
+  ADC #$18        ; paddle height
+  SEC 
+  SBC $0218
+  BCC AfterFlipBallXIfRightPaddle
+  
+  LDA #$01        ; flip ball vx
+  CLC
+  SBC vx
+  STA vx
 AfterFlipBallXIfRightPaddle:
   
   RTI             ; return from interrupt
@@ -303,15 +367,18 @@ palette:
   ;     0               1               2               3
 
 sprites:
-     ;vert tile attr horiz
+  ;vert tile attr horiz
+  ; 200
   .db $80, $01, $00, $10   ;sprite 0: paddle 1 top
   .db $88, $02, $00, $10   ;sprite 1: paddle 1 center
   .db $90, $01, $80, $10   ;sprite 2: paddle 1 bottom
   
+  ; 20C
   .db $80, $01, $42, $E0   ;sprite 3: paddle 2 top
   .db $88, $02, $42, $E0   ;sprite 4: paddle 2 center
   .db $90, $01, $C2, $E0   ;sprite 5: paddle 2 bottom
   
+  ; 218
   ; address 0218
   .db $88, $03, $03, $96   ;sprite 6: ball
   
