@@ -18,6 +18,10 @@ ball_center .rs 1
 paddle_center .rs 1
 ball_bottom .rs 1
 paddle_bottom .rs 1
+o1_hi        .rs 1
+o1_lo       .rs 1
+o2_hi        .rs 1
+o2_lo       .rs 1
 
 ;;;;;;;;;;;;;;;
 
@@ -285,14 +289,34 @@ CheckIfPaddleHit:
   SBC #$00
   STA hit_hi
   
-  LDA #$00
-  STA vy
-  
-  LDA #$01
+  LDA #$01            ; flip vx
   CLC
   SBC vx
   STA vx
-
+  
+  LDA hit_lo
+  STA o1_lo
+  LDA hit_hi
+  STA o1_hi
+  LDA #$00
+  STA o2_hi
+  LDA #$0A
+  STA o2_lo
+  JSR CmpLo16
+  BCS TryMinus
+  LDA #$FC
+  STA vy
+  JMP DoNotFlipLeftX
+TryMinus:
+  LDA #$FF
+  STA o2_hi
+  LDA #$E0
+  STA o2_lo
+  JSR CmpLo16
+  BCS DoNotFlipLeftX
+  LDA #$04
+  STA vy
+  
 DoNotFlipLeftX:
   
 FlipBallXIfRightPaddle:
@@ -321,6 +345,28 @@ AfterFlipBallXIfRightPaddle:
   
   RTI             ; return from interrupt
   
+;;;;;;;;;;;;;;
+
+CmpLo16:
+  LDA o1_hi
+  BPL o1_is_positive
+  LDA o2_hi
+  BPL o1_is_negative_o2_is_positive
+BothHaveTheSameSign:
+  LDA o1_lo
+  CMP o2_lo
+  RTS
+o1_is_negative_o2_is_positive:
+  LDA #$01
+  CMP #$02
+  RTS
+o1_is_positive:
+  LDA o2_hi
+  BPL BothHaveTheSameSign
+  LDA #$02
+  CMP #$01
+  RTS
+
 ;;;;;;;;;;;;;;
 
 ReadControllers:
