@@ -244,10 +244,15 @@ AfterFlipBallYIfTopWall:
 FlipBallXIfLeftPaddle:
   LDA $021B             ; compare ball x with left paddle x + paddle width
   CMP #$18        
-  BCC CheckIfPaddleHit
-  JMP DoNotFlipLeftX
+  BCC CheckLeftPaddle
+
+FlipBallXIfRightPaddle:
+  LDA $021B
+  CMP #$E0              ; compare ball x with right paddle x
+  BCS CheckRightPaddle
+  JMP PaddleCheckDone
   
-CheckIfPaddleHit:
+CheckLeftPaddle:
   LDA $0200
   STA paddle_top
   
@@ -257,39 +262,21 @@ CheckIfPaddleHit:
   STA paddle_bottom
   
   JSR PaddleContactCheck
+  JMP PaddleCheckDone
   
-FlipDatX:
-  LDA #$01        ; flip ball vx
-  CLC
-  SBC vx
-  STA vx
-  
-DoNotFlipLeftX:
-  
-FlipBallXIfRightPaddle:
-  LDA $021B
-  CMP #$E0        ; compare ball x with right paddle x
-  ; if x < y then (BCC) else (BCS)
-  BCC AfterFlipBallXIfRightPaddle  
-  
-  LDA $0218
-  SEC
-  SBC $020C
-  BCC AfterFlipBallXIfRightPaddle
-  
+CheckRightPaddle:
   LDA $020C
-  CLC
-  ADC #$18        ; paddle height
-  SEC 
-  SBC $0218
-  BCC AfterFlipBallXIfRightPaddle
+  STA paddle_top
   
-  LDA #$01        ; flip ball vx
+  LDA paddle_top
   CLC
-  SBC vx
-  STA vx
-AfterFlipBallXIfRightPaddle:
+  ADC #$18
+  STA paddle_bottom
   
+  JSR PaddleContactCheck
+  JMP PaddleCheckDone
+  
+PaddleCheckDone:
   RTI             ; return from interrupt
   
 ;;;;;;;;;;;;;;;
@@ -301,11 +288,11 @@ AfterFlipBallXIfRightPaddle:
 PaddleContactCheck:
   LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
   CMP paddle_top
-  BCC DoNotFlipLeftX
+  BCC PaddleCheckDone
   
   LDA ball_top        ; if ball_top >= paddle_bottom then no contact
   CMP paddle_bottom
-  BCS DoNotFlipLeftX
+  BCS PaddleCheckDone
   
   LDA ball_top        ; ball_top - paddle_top
   SEC
@@ -344,9 +331,15 @@ Step5:
 Step6:
   LDA hit
   CMP #$18
-  BCC PaddleContactCheckDone
+  BCC FlipX
   INC vy
   
+FlipX:
+  LDA #$01        ; flip ball vx
+  CLC
+  SBC vx
+  STA vx
+
 PaddleContactCheckDone:
   RTS
   
