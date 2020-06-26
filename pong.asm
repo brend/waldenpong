@@ -233,14 +233,6 @@ FlipBallYIfTopWall:
   STA vy
 AfterFlipBallYIfTopWall:
   
-FlipBallXIfLeftPaddle:
-  LDA $021B
-  CMP #$18        ; compare ball x with left paddle x + paddle width
-  BCC CheckIfPaddleHit
-  JMP DoNotFlipLeftX
-  
-CheckIfPaddleHit:
-  
   LDA $0218
   STA ball_top
   
@@ -249,6 +241,13 @@ CheckIfPaddleHit:
   ADC #$08
   STA ball_bottom
   
+FlipBallXIfLeftPaddle:
+  LDA $021B             ; compare ball x with left paddle x + paddle width
+  CMP #$18        
+  BCC CheckIfPaddleHit
+  JMP DoNotFlipLeftX
+  
+CheckIfPaddleHit:
   LDA $0200
   STA paddle_top
   
@@ -257,6 +256,49 @@ CheckIfPaddleHit:
   ADC #$18
   STA paddle_bottom
   
+  JSR PaddleContactCheck
+  
+FlipDatX:
+  LDA #$01        ; flip ball vx
+  CLC
+  SBC vx
+  STA vx
+  
+DoNotFlipLeftX:
+  
+FlipBallXIfRightPaddle:
+  LDA $021B
+  CMP #$E0        ; compare ball x with right paddle x
+  ; if x < y then (BCC) else (BCS)
+  BCC AfterFlipBallXIfRightPaddle  
+  
+  LDA $0218
+  SEC
+  SBC $020C
+  BCC AfterFlipBallXIfRightPaddle
+  
+  LDA $020C
+  CLC
+  ADC #$18        ; paddle height
+  SEC 
+  SBC $0218
+  BCC AfterFlipBallXIfRightPaddle
+  
+  LDA #$01        ; flip ball vx
+  CLC
+  SBC vx
+  STA vx
+AfterFlipBallXIfRightPaddle:
+  
+  RTI             ; return from interrupt
+  
+;;;;;;;;;;;;;;;
+;; Subroutine PaddleContactCheck
+;;  Input: expects variables paddle_top, paddle_bottom, ball_top, ball_bottom to be filled
+;; Output: writes new ball velocities to vx, vy
+;;;;;;;;;;;;;;;
+
+PaddleContactCheck:
   LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
   CMP paddle_top
   BCC DoNotFlipLeftX
@@ -302,42 +344,11 @@ Step5:
 Step6:
   LDA hit
   CMP #$18
-  BCC FlipDatX
+  BCC PaddleContactCheckDone
   INC vy
   
-FlipDatX:
-  LDA #$01        ; flip ball vx
-  CLC
-  SBC vx
-  STA vx
-  
-DoNotFlipLeftX:
-  
-FlipBallXIfRightPaddle:
-  LDA $021B
-  CMP #$E0        ; compare ball x with right paddle x
-  ; if x < y then (BCC) else (BCS)
-  BCC AfterFlipBallXIfRightPaddle  
-  
-  LDA $0218
-  SEC
-  SBC $020C
-  BCC AfterFlipBallXIfRightPaddle
-  
-  LDA $020C
-  CLC
-  ADC #$18        ; paddle height
-  SEC 
-  SBC $0218
-  BCC AfterFlipBallXIfRightPaddle
-  
-  LDA #$01        ; flip ball vx
-  CLC
-  SBC vx
-  STA vx
-AfterFlipBallXIfRightPaddle:
-  
-  RTI             ; return from interrupt
+PaddleContactCheckDone:
+  RTS
   
 ;;;;;;;;;;;;;;
 
