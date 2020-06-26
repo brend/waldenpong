@@ -8,14 +8,14 @@
 
   .rsset $0000  ;;start variables at ram location 0
   
-buttons1  .rs 1
-buttons2  .rs 1
-vx        .rs 1
-vy        .rs 1
-hit       .rs 1
-ball_center .rs 1
-paddle_center .rs 1
-ball_bottom .rs 1
+buttons1      .rs 1
+buttons2      .rs 1
+vx            .rs 1
+vy            .rs 1
+hit           .rs 1
+ball_top      .rs 1
+ball_bottom   .rs 1
+paddle_top    .rs 1
 paddle_bottom .rs 1
 
 ;;;;;;;;;;;;;;;
@@ -238,33 +238,39 @@ FlipBallXIfLeftPaddle:
   CMP #$18        ; compare ball x with left paddle x + paddle width
   BCC CheckIfPaddleHit
   JMP DoNotFlipLeftX
+  
 CheckIfPaddleHit:
   
   LDA $0218
+  STA ball_top
+  
+  LDA ball_top
   CLC
   ADC #$08
   STA ball_bottom
   
-  LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
-  CMP $0200
-  BCC DoNotFlipLeftX
-  
   LDA $0200
+  STA paddle_top
+  
+  LDA paddle_top
   CLC
   ADC #$18
   STA paddle_bottom
   
-  LDA $0218           ; if ball_top >= paddle_bottom then no contact
+  LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
+  CMP paddle_top
+  BCC DoNotFlipLeftX
+  
+  LDA ball_top        ; if ball_top >= paddle_bottom then no contact
   CMP paddle_bottom
   BCS DoNotFlipLeftX
   
-  LDA $0218           ; ball_top - paddle_top
+  LDA ball_top        ; ball_top - paddle_top
   SEC
-  SBC $0200
+  SBC paddle_top
   CLC
   ADC #$07            ; add ball_height - 1
   STA hit
-
 
   LDA #$FE            ; vy := -3
   STA vy
