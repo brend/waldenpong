@@ -270,27 +270,27 @@ CheckIfPaddleHit:
   STA vy
   
   LDA hit
-  CMP #$04            ; if hit >= 5 then inc(vy)
+  CMP #$04            ; if hit >= 4 then inc(vy)
   BCC Step2
   INC vy
 Step2:
   LDA hit
-  CMP #$08            ; if hit >= 10 then inc(vy)
+  CMP #$08            ; if hit >= 8 then inc(vy)
   BCC Step3
   INC vy
 Step3:
   LDA hit
-  CMP #$0C            ; if hit >= 20 then inc(vy)
+  CMP #$0C            ; if hit >= 12 then inc(vy)
   BCC Step4
   INC vy
 Step4:
   LDA hit
-  CMP #$10            ; if hit >= 25 then inc(vy)
+  CMP #$10            ; if hit >= 16 then inc(vy)
   BCC Step5
   INC vy
 Step5:
   LDA hit
-  CMP #$14
+  CMP #$14            ; etc
   BCC Step6
   INC vy
 Step6:
