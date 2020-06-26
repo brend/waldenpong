@@ -12,16 +12,11 @@ buttons1  .rs 1
 buttons2  .rs 1
 vx        .rs 1
 vy        .rs 1
-hit_lo      .rs 1
-hit_hi      .rs 1
+hit       .rs 1
 ball_center .rs 1
 paddle_center .rs 1
 ball_bottom .rs 1
 paddle_bottom .rs 1
-o1_hi        .rs 1
-o1_lo       .rs 1
-o2_hi        .rs 1
-o2_lo       .rs 1
 
 ;;;;;;;;;;;;;;;
 
@@ -103,7 +98,7 @@ LoadSpritesLoop:
 InitObjects:
   LDA #$00
   STA vy
-  LDA #$01
+  LDA #$02
   STA vx
 
 Forever:
@@ -125,23 +120,19 @@ HandleUp:
 
   LDA $0200       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $0200       ; save sprite X position  
 
   LDA $0204       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $0204       ; save sprite X position  
 
   LDA $0208       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $0208       ; save sprite X position  
 
-;  LDA $020C       ; load sprite X position
-;  SEC             ; make sure carry flag is set
-;  SBC #$01        ; A = A - 1
-;  STA $020C       ; save sprite X position  
 HandleUpDone:
 
 HandleDown:
@@ -151,23 +142,19 @@ HandleDown:
 
   LDA $0200       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $0200       ; save sprite X position  
 
   LDA $0204       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $0204       ; save sprite X position  
 
   LDA $0208       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $0208       ; save sprite X position  
 
-;  LDA $020C       ; load sprite X position
-;  CLC             ; make sure carry flag is set
-;  ADC #$01        ; A = A - 1
-;  STA $020C       ; save sprite X position  
 HandleDownDone:
   
 HandleUp2:
@@ -177,17 +164,17 @@ HandleUp2:
 
   LDA $020C       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $020C       ; save sprite X position  
 
   LDA $0210       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $0210       ; save sprite X position  
 
   LDA $0214       ; load sprite X position
   SEC             ; make sure carry flag is set
-  SBC #$01        ; A = A - 1
+  SBC #$02        ; A = A - 1
   STA $0214       ; save sprite X position  
 HandleUpDone2:
   
@@ -198,17 +185,17 @@ HandleDown2:
 
   LDA $020C       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $020C       ; save sprite X position  
 
   LDA $0210       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $0210       ; save sprite X position  
 
   LDA $0214       ; load sprite X position
   CLC             ; make sure carry flag is set
-  ADC #$01        ; A = A - 1
+  ADC #$02        ; A = A - 1
   STA $0214       ; save sprite X position
 HandleDownDone2:
   
@@ -258,7 +245,7 @@ CheckIfPaddleHit:
   ADC #$08
   STA ball_bottom
   
-  LDA ball_bottom     ; compare ball_bottom with paddle_top
+  LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
   CMP $0200
   BCC DoNotFlipLeftX
   
@@ -267,55 +254,46 @@ CheckIfPaddleHit:
   ADC #$18
   STA paddle_bottom
   
-  LDA $0218           ; compare ball_top with paddle_bottom
+  LDA $0218           ; if ball_top >= paddle_bottom then no contact
   CMP paddle_bottom
   BCS DoNotFlipLeftX
   
-  LDA $0218
-  CLC
-  ADC #$08
-  STA ball_center
-  
-  LDA $0200
-  CLC
-  ADC #$0C
-  STA paddle_center
-  
-  LDA ball_center     ; hit := ball_center - paddle_center
+  LDA $0218           ; ball_top - paddle_top
   SEC
-  SBC paddle_center
-  STA hit_lo
-  LDA #$00
-  SBC #$00
-  STA hit_hi
+  SBC $0200
+  CLC
+  ADC #$07            ; add ball_height - 1
+  STA hit
+
+
+  LDA #$FE            ; vy := -2
+  STA vy
   
-  LDA #$01            ; flip vx
+  LDA hit
+  CMP #$05            ; if hit >= 5 then inc(vy)
+  BCC Step2
+  INC vy
+Step2:
+  LDA hit
+  CMP #$0A            ; if hit >= 10 then inc(vy)
+  BCC Step3
+  INC vy
+Step3:
+  LDA hit
+  CMP #$14            ; if hit >= 20 then inc(vy)
+  BCC Step4
+  INC vy
+Step4:
+  LDA hit
+  CMP #$19            ; if hit >= 25 then inc(vy)
+  BCC FlipDatX
+  INC vy
+  
+FlipDatX:
+  LDA #$01        ; flip ball vx
   CLC
   SBC vx
   STA vx
-  
-  LDA hit_lo
-  STA o1_lo
-  LDA hit_hi
-  STA o1_hi
-  LDA #$00
-  STA o2_hi
-  LDA #$0A
-  STA o2_lo
-  JSR CmpLo16
-  BCS TryMinus
-  LDA #$FC
-  STA vy
-  JMP DoNotFlipLeftX
-TryMinus:
-  LDA #$FF
-  STA o2_hi
-  LDA #$E0
-  STA o2_lo
-  JSR CmpLo16
-  BCS DoNotFlipLeftX
-  LDA #$04
-  STA vy
   
 DoNotFlipLeftX:
   
@@ -345,28 +323,6 @@ AfterFlipBallXIfRightPaddle:
   
   RTI             ; return from interrupt
   
-;;;;;;;;;;;;;;
-
-CmpLo16:
-  LDA o1_hi
-  BPL o1_is_positive
-  LDA o2_hi
-  BPL o1_is_negative_o2_is_positive
-BothHaveTheSameSign:
-  LDA o1_lo
-  CMP o2_lo
-  RTS
-o1_is_negative_o2_is_positive:
-  LDA #$01
-  CMP #$02
-  RTS
-o1_is_positive:
-  LDA o2_hi
-  BPL BothHaveTheSameSign
-  LDA #$02
-  CMP #$01
-  RTS
-
 ;;;;;;;;;;;;;;
 
 ReadControllers:
