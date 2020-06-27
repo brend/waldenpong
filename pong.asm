@@ -98,7 +98,7 @@ LoadSpritesLoop:
 InitObjects:
   LDA #$00
   STA vy
-  LDA #$02
+  LDA #$fe
   STA vx
 
 Forever:
@@ -111,7 +111,7 @@ NMI:
   STA $4014       ; set the high byte (02) of the RAM address, start the transfer
 
 
-  JSR ReadControllers
+  JSR ReadControllers ; write controller states to buttons1, buttons2
   
 HandleUp:
   LDA buttons1
@@ -233,7 +233,7 @@ FlipBallYIfTopWall:
   STA vy
 AfterFlipBallYIfTopWall:
   
-  LDA $0218
+  LDA $0218             ; store ball_top, ball_bottom for future reference
   STA ball_top
   
   LDA ball_top
@@ -242,13 +242,13 @@ AfterFlipBallYIfTopWall:
   STA ball_bottom
   
 FlipBallXIfLeftPaddle:
-  LDA $021B             ; compare ball x with left paddle x + paddle width
+  LDA $021B             ; ball x < lpaddle x + lpaddle width => check lpaddle collision
   CMP #$18        
   BCC CheckLeftPaddle
 
 FlipBallXIfRightPaddle:
   LDA $021B
-  CMP #$E0              ; compare ball x with right paddle x
+  CMP #$E0              ; ball x >= rpaddle x => check rpaddle collision
   BCS CheckRightPaddle
   JMP PaddleCheckDone
   
@@ -288,11 +288,11 @@ PaddleCheckDone:
 PaddleContactCheck:
   LDA ball_bottom     ; if ball_bottom < paddle_top then no contact
   CMP paddle_top
-  BCC PaddleCheckDone
+  BCC PaddleContactCheckDone
   
   LDA ball_top        ; if ball_top >= paddle_bottom then no contact
   CMP paddle_bottom
-  BCS PaddleCheckDone
+  BCS PaddleContactCheckDone
   
   LDA ball_top        ; ball_top - paddle_top
   SEC
@@ -403,6 +403,8 @@ sprites:
   ; 218
   ; address 0218
   .db $88, $03, $03, $96   ;sprite 6: ball
+  
+  .db $00, $00, $00, $00   ;buffer - because loadsprites copies 32 bytes
   
 
   .org $FFFA     ;first of the three vectors starts here
