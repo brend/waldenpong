@@ -117,87 +117,78 @@ HandleUp:
   LDA buttons1
   AND #%00001000
   BEQ HandleUpDone
-
-  LDA $0200       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $0200       ; save sprite X position  
-
-  LDA $0204       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $0204       ; save sprite X position  
-
-  LDA $0208       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $0208       ; save sprite X position  
-
+  
+  LDX #$00
+UpLoop:
+  LDA $0200, x      ; loop over lpaddle top + X register
+  SEC 
+  SBC #02           ; subtract 2
+  STA $0200, x
+  INX               ; increase X by 4 (sprite size)
+  CPX #$09          ; stop after 3rd sprite
+  BCS HandleUpDone
+  INX
+  INX
+  INX
+  JMP UpLoop
 HandleUpDone:
-
 HandleDown:
   LDA buttons1
   AND #%00000100
   BEQ HandleDownDone
 
-  LDA $0200       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $0200       ; save sprite X position  
-
-  LDA $0204       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $0204       ; save sprite X position  
-
-  LDA $0208       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $0208       ; save sprite X position  
-
-HandleDownDone:
-  
+  LDX #$00
+DownLoop:
+  LDA $0200, x
+  CLC         
+  ADC #$02    
+  STA $0200, x
+  INX
+  CPX #$09
+  BCS HandleDownDone
+  INX
+  INX
+  INX
+  JMP DownLoop
+HandleDownDone:  
 HandleUp2:
   LDA buttons2
   AND #%00001000
-  BEQ HandleUpDone2
-
-  LDA $020C       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $020C       ; save sprite X position  
-
-  LDA $0210       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $0210       ; save sprite X position  
-
-  LDA $0214       ; load sprite X position
-  SEC             ; make sure carry flag is set
-  SBC #$02        ; A = A - 1
-  STA $0214       ; save sprite X position  
-HandleUpDone2:
+  BEQ HandleUp2Done
   
+  LDX #$00
+Up2Loop:
+  LDA $020C, x
+  SEC    
+  SBC #$02
+  STA $020C, x
+  INX
+  CPX #$09
+  BCS HandleUp2Done
+  INX
+  INX
+  INX
+  JMP Up2Loop
+HandleUp2Done:
 HandleDown2:
   LDA buttons2
   AND #%00000100
-  BEQ HandleDownDone2
+  BEQ HandleDown2Done
 
-  LDA $020C       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $020C       ; save sprite X position  
-
-  LDA $0210       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $0210       ; save sprite X position  
-
-  LDA $0214       ; load sprite X position
-  CLC             ; make sure carry flag is set
-  ADC #$02        ; A = A - 1
-  STA $0214       ; save sprite X position
-HandleDownDone2:
+  LDX #$00
+Down2Loop:
+  LDA $020C, x
+  CLC     
+  ADC #$02
+  STA $020C, x
+  INX
+  CPX #$09
+  BCS HandleDown2Done
+  INX
+  INX
+  INX
+  JMP Down2Loop
+HandleDown2Done:
   
 MoveBall:  
   ; $0218 is base address of ball sprite
