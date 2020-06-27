@@ -17,6 +17,9 @@ ball_top      .rs 1
 ball_bottom   .rs 1
 paddle_top    .rs 1
 paddle_bottom .rs 1
+addr_lo       .rs 1
+addr_hi       .rs 1
+offset        .rs 1
 
 ;;;;;;;;;;;;;;;
 
@@ -116,80 +119,55 @@ NMI:
 HandleUp:
   LDA buttons1
   AND #%00001000
-  BEQ HandleUpDone
+  BEQ HandleDown
   
-  LDX #$00
-UpLoop:
-  LDA $0200, x      ; loop over lpaddle top + X register
-  SEC 
-  SBC #02           ; subtract 2
-  STA $0200, x
-  INX               ; increase X by 4 (sprite size)
-  CPX #$09          ; stop after 3rd sprite
-  BCS HandleUpDone
-  INX
-  INX
-  INX
-  JMP UpLoop
-HandleUpDone:
+  LDA #$02          ; HIGH(#$0200)
+  STA addr_hi
+  LDA #$00          ; LOW(#$0200)
+  STA addr_lo
+  LDA #$FE
+  STA offset
+  JSR ShmandleInput
+  
 HandleDown:
   LDA buttons1
   AND #%00000100
-  BEQ HandleDownDone
+  BEQ HandleUp2
 
-  LDX #$00
-DownLoop:
-  LDA $0200, x
-  CLC         
-  ADC #$02    
-  STA $0200, x
-  INX
-  CPX #$09
-  BCS HandleDownDone
-  INX
-  INX
-  INX
-  JMP DownLoop
-HandleDownDone:  
+  LDA #$02          ; HIGH(#$0200)
+  STA addr_hi
+  LDA #$00          ; LOW(#$0200)
+  STA addr_lo
+  LDA #$02
+  STA offset
+  JSR ShmandleInput
+  
 HandleUp2:
   LDA buttons2
   AND #%00001000
-  BEQ HandleUp2Done
+  BEQ HandleDown2
   
-  LDX #$00
-Up2Loop:
-  LDA $020C, x
-  SEC    
-  SBC #$02
-  STA $020C, x
-  INX
-  CPX #$09
-  BCS HandleUp2Done
-  INX
-  INX
-  INX
-  JMP Up2Loop
-HandleUp2Done:
+  LDA #$02          ; HIGH(#$020C)
+  STA addr_hi
+  LDA #$0C          ; LOW(#$020C)
+  STA addr_lo
+  LDA #$FE
+  STA offset
+  JSR ShmandleInput
+  
 HandleDown2:
   LDA buttons2
   AND #%00000100
-  BEQ HandleDown2Done
+  BEQ MoveBall
 
-  LDX #$00
-Down2Loop:
-  LDA $020C, x
-  CLC     
-  ADC #$02
-  STA $020C, x
-  INX
-  CPX #$09
-  BCS HandleDown2Done
-  INX
-  INX
-  INX
-  JMP Down2Loop
-HandleDown2Done:
-  
+  LDA #$02          ; HIGH(#$020C)
+  STA addr_hi
+  LDA #$0C          ; LOW(#$020C)
+  STA addr_lo
+  LDA #$02
+  STA offset
+  JSR ShmandleInput
+    
 MoveBall:  
   ; $0218 is base address of ball sprite
 MoveBallY:
@@ -269,6 +247,27 @@ CheckRightPaddle:
   
 PaddleCheckDone:
   RTI             ; return from interrupt
+  
+;;;;;;;;;;;;;;;
+;; Subroutine ShmandleInput
+;;;;;;;;;;;;;;;
+ShmandleInput:
+  LDY #$00
+ShmandleLoop:
+  LDA [addr_lo], y      ; DO NOT USE PARENTHESES for indirect addressing, e.g. "LDA (addr_lo), y" - this syntax doesn't work with NESASM; it leads to no error message, but nothing will happen
+  CLC
+  ADC offset
+  STA [addr_lo], y
+  INY
+  CPY #$09
+  BCS DoneShmandlingInput
+  INY
+  INY
+  INY
+  JMP ShmandleLoop
+DoneShmandlingInput:
+  RTS
+  
   
 ;;;;;;;;;;;;;;;
 ;; Subroutine PaddleContactCheck
@@ -397,7 +396,6 @@ sprites:
   
   .db $00, $00, $00, $00   ;buffer - because loadsprites copies 32 bytes
   
-
   .org $FFFA     ;first of the three vectors starts here
   .dw NMI        ;when an NMI happens (once per frame if enabled) the 
                    ;processor will jump to the label NMI:
