@@ -1,2 +1,3 @@
-pong.fns
-pong.nes
+*.nes
+*.fns
+default.profraw
